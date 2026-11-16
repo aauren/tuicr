@@ -1115,10 +1115,10 @@ mod tests {
         app.comment_cursor = 5;
         assert!(app.comment_vim_mode_label().is_some());
         let with = build_section(&app, 99, (0, 1000)).0;
-        assert!(with.iter().any(|r| r.contains("INSERT")), "{with:?}");
+        assert!(with.iter().any(|r| r.contains("NORMAL")), "{with:?}");
         app.comment_vim_enabled = false;
         let without = build_section(&app, 99, (0, 1000)).0;
-        assert!(!without.iter().any(|r| r.contains("INSERT")));
+        assert!(!without.iter().any(|r| r.contains("NORMAL")));
     }
 
     #[test]
@@ -1963,10 +1963,10 @@ mod tests {
         app.comment_vim_enabled = true;
         let file = app.diff_files[idx].clone();
         let (rows, ..) = preamble_state(&app, &file, idx, (0, 1000));
-        assert!(rows.iter().any(|r| r.contains("INSERT")), "{rows:?}");
+        assert!(rows.iter().any(|r| r.contains("NORMAL")), "{rows:?}");
         app.comment_vim_enabled = false;
         let (rows, ..) = preamble_state(&app, &file, idx, (0, 1000));
-        assert!(!rows.iter().any(|r| r.contains("INSERT")));
+        assert!(!rows.iter().any(|r| r.contains("NORMAL")));
     }
 
     #[test]

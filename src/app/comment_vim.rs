@@ -37,7 +37,7 @@ impl App {
         Some((
             self.comment_vim_editor
                 .as_ref()
-                .map_or("INSERT", CommentVimEditor::label)
+                .map_or("NORMAL", CommentVimEditor::label)
                 .to_string(),
             false,
         ))

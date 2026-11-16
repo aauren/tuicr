@@ -159,7 +159,12 @@ fn comment_vim_soft_tab_inserts_configured_spaces() {
     app.comment_vim_enabled = true;
     app.comment_tab_width = 2;
     app.enter_review_comment_mode();
-    app.ensure_comment_vim_editor(); // Insert mode, empty buffer
+    app.ensure_comment_vim_editor(); // Normal mode, empty buffer
+    assert!(app.comment_vim_in_normal_mode());
+    app.comment_vim_feed_key(crossterm::event::KeyEvent::new(
+        crossterm::event::KeyCode::Char('i'),
+        crossterm::event::KeyModifiers::NONE,
+    ));
     app.comment_vim_insert_soft_tab();
     assert_eq!(app.comment_buffer, "  ");
     assert_eq!(app.comment_cursor, 2);

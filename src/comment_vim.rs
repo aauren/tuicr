@@ -38,10 +38,10 @@ pub struct CommentVimEditor {
 
 impl CommentVimEditor {
     /// Build an editor seeded from the buffer text + byte cursor, starting in
-    /// Insert mode (typing works immediately; `Esc` drops to Normal).
+    /// Normal mode so Tab cycles the comment type before `i`/`a` starts typing.
     pub fn from_buffer(text: &str, cursor_byte: usize) -> Self {
         let mut state = EditorState::new(Lines::from(text));
-        state.mode = EditorMode::Insert;
+        state.mode = EditorMode::Normal;
         state.cursor = byte_to_index2(text, cursor_byte);
         Self {
             state,
@@ -141,13 +141,25 @@ mod tests {
         KeyEvent::new(KeyCode::Char(c), KeyModifiers::NONE)
     }
 
+    fn shift(c: char) -> KeyEvent {
+        KeyEvent::new(KeyCode::Char(c), KeyModifiers::SHIFT)
+    }
+
     fn special(code: KeyCode) -> KeyEvent {
         KeyEvent::new(code, KeyModifiers::NONE)
     }
 
     #[test]
+    fn starts_in_normal_mode() {
+        let editor = CommentVimEditor::from_buffer("", 0);
+        assert!(editor.is_normal_mode());
+        assert_eq!(editor.label(), "NORMAL");
+    }
+
+    #[test]
     fn insert_mode_typing_syncs_buffer() {
         let mut editor = CommentVimEditor::from_buffer("", 0);
+        editor.feed_key(key('i'));
         assert!(!editor.is_normal_mode());
         let mut last = (String::new(), 0);
         for c in "hi".chars() {
@@ -160,6 +172,7 @@ mod tests {
     #[test]
     fn insert_mode_backtab_is_ignored() {
         let mut editor = CommentVimEditor::from_buffer("hello", 5);
+        editor.feed_key(shift('A'));
         let result = editor.feed_key(KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT));
         assert_eq!(result, ("hello".to_string(), 5));
         assert_eq!(editor.label(), "INSERT");
@@ -169,6 +182,7 @@ mod tests {
     #[test]
     fn unmapped_keys_are_ignored_in_both_modes() {
         let mut editor = CommentVimEditor::from_buffer("hello", 5);
+        editor.feed_key(shift('A'));
         for code in [KeyCode::F(1), KeyCode::Insert] {
             let r = editor.feed_key(KeyEvent::new(code, KeyModifiers::NONE));
             assert_eq!(r, ("hello".to_string(), 5));
@@ -182,6 +196,7 @@ mod tests {
     #[test]
     fn esc_switches_to_normal_mode() {
         let mut editor = CommentVimEditor::from_buffer("hello", 5);
+        editor.feed_key(key('i'));
         editor.feed_key(special(KeyCode::Esc));
         assert!(editor.is_normal_mode());
         assert_eq!(editor.label(), "NORMAL");
@@ -189,9 +204,7 @@ mod tests {
 
     #[test]
     fn normal_mode_x_deletes_char_under_cursor() {
-        // Seed "abc" with cursor at start, drop to normal, delete first char.
         let mut editor = CommentVimEditor::from_buffer("abc", 0);
-        editor.feed_key(special(KeyCode::Esc));
         let (text, _) = editor.feed_key(key('x'));
         assert_eq!(text, "bc");
     }
@@ -199,7 +212,6 @@ mod tests {
     #[test]
     fn normal_mode_dd_deletes_line() {
         let mut editor = CommentVimEditor::from_buffer("line1\nline2", 0);
-        editor.feed_key(special(KeyCode::Esc));
         editor.feed_key(key('d'));
         let (text, _) = editor.feed_key(key('d'));
         assert_eq!(text, "line2");
